@@ -1,38 +1,37 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 import sys
 import urllib.request
 import json
-
-APP_URL = "https://api.apigw.smt.docomo.ne.jp/dialogue/v1/dialogue"
-API_KEY = "5232394162636b647a47526b303639493647314b62466f313532626c522e674f687234766f396679687843"
+import logging
+import configparser
 
 class DocomoIface(object):
-  def __init__(self, api_key=API_KEY):
-    self.uri = "{}/?APIKEY={}".format(APP_URL, API_KEY)
-    self.method = "POST"
-    self.headers = {"Content-Type" : "application/json"}
-    print(self.uri)
+  def __init__(self):
+    config = configparser.ConfigParser()
+    config.read('settings.conf')
+    BASE_URL = config['docomo']['base_url']
+    API_KEY = config['docomo']['api_key']
+    self.__uri = "{}/?APIKEY={}".format(BASE_URL, API_KEY)
+    self.__method = "POST"
+    self.__headers = {"Content-Type" : "application/json"}
 
   def send_msg(self, message):
     req_body = {"utt": message}
     json_data = json.dumps(req_body).encode("utf-8")
-    req = urllib.request.Request(self.uri, data=json_data, headers=self.headers, method=self.method)
+    req = urllib.request.Request(self.__uri, data=json_data, headers=self.__headers, method=self.__method)
     try:
-      #res = urllib.request.urlopen(req)
       res = urllib.request.urlopen(req)
     except Exception as e:
-      print(e)
+      logging.error(e)
       sys.exit()
     with res as r:
       st = r.read().decode('utf-8')
       res_json = json.loads(st)
+      logging.debug(res_json['utt'])
       return res_json['utt']
-
 
 if __name__ == '__main__':
   docomo = DocomoIface()
-  res = docomo.send_msg("こんばんは")
+  res = docomo.send_msg("おはようございます")
   print(res)
-
